@@ -1,0 +1,10 @@
+graph TD
+    A[APIs] --> B[Batch Ingestion]
+    A --> C[Streaming Ingestion]
+    B --> D[GCS Raw Data]
+    C --> E[Pub/Sub]
+    E --> F[BigQuery Streaming]
+    D --> G[BigQuery Raw]
+    G --> H[dbt]
+    F --> H
+    H --> I[Analytics Tables]

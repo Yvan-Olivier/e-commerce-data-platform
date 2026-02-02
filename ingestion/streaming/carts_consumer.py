@@ -1,0 +1,1 @@
+"""Consume Pub/Sub → BigQuery raw table."""
