@@ -1,0 +1,91 @@
+# Data Engineering Technical Case Study
+
+## Context
+
+You are a Data Engineer working for a data-driven company that wants to centralize operational data for analytics.
+
+Your mission is to design and implement a production-ready data pipeline on GCP that ingests batch and near real-time data from APIs, transforms it using dbt, and exposes a final star schema in BigQuery for analytics.
+
+---
+
+## Objectives
+
+Build a data platform that:
+
+1. Ingests batch data from REST APIs.
+2. Ingests near real-time events from a REST API using a streaming pattern.
+3. Stores raw data safely and reproducibly.
+4. Transforms data using dbt (BigQuery).
+5. Produces a final star schema optimized for analytics in BigQuery.
+6. Is reproducible using Terraform (optional).
+
+---
+
+## Data Sources (Public APIs)
+
+Use the Fake Store API:
+
+- **Products (batch)**  
+  https://fakestoreapi.com/products
+
+- **Users (batch)**  
+  https://fakestoreapi.com/users
+
+- **Carts (treat as orders – near real-time)**  
+  https://fakestoreapi.com/carts
+
+**Note:**  
+The carts endpoint is not a true streaming API. You are expected to simulate real-time ingestion by polling frequently and designing the pipeline as event-based.
+
+---
+
+## Ingestion Requirements
+
+### 1. Batch ingestion (Products & Users)
+
+- Frequency: daily (must also be runnable manually).
+- Extract data from the APIs.
+- Store raw JSON in GCS (immutable).
+
+**Key expectations**
+- Idempotent design (re-runs do not break data).
+- Clear separation between raw and transformed data.
+
+---
+
+### 2. Near real-time ingestion (Carts / Orders)
+
+- Poll the carts API frequently (e.g. every 30–60 seconds).
+- Publish each cart as an event to Pub/Sub.
+- Load events into a BigQuery raw streaming table.
+
+**Key expectations**
+- Handle duplicates and reprocessing safely.
+- Implement a state / watermark strategy (document your choice).
+- Include event metadata (event id, extracted_at, published_at, etc.).
+
+---
+
+## Deliverables
+
+1. **Git repository containing:**
+   - Terraform code (optional)
+   - Python ingestion code
+   - dbt project
+   - README
+
+2. **README.md explaining:**
+   - Architecture & design decisions
+   - How to deploy infrastructure
+   - How to run batch ingestion
+   - How near real-time ingestion works
+   - How to run dbt
+   - Assumptions & limitations
+
+3. **Architecture diagram**
+   - image, draw.io, or Mermaid
+
+---
+
+**Note:**  
+All deliverables, including code comments, documentation, and diagrams, must be in English.
