@@ -1,94 +1,153 @@
 # EY Data Platform
 
-A data ingestion system for e-commerce data with batch and streaming pipelines.
+Production-ready data pipeline on GCP for e-commerce analytics with batch and near real-time ingestion.
 
-## Architecture Overview
-
-```
-FakeStore API → GCS (Raw Data) → BigQuery (Data Warehouse)
-```
-
-## What's Implemented
-
-### ✅ Batch Ingestion Pipeline
-- **Source**: FakeStore API (products, users)
-- **Storage**: Google Cloud Storage (JSONL format)
-- **Warehouse**: BigQuery tables
-- **Schedule**: On-demand (ready for scheduling)
-
-### ✅ Data Validation
-- Pydantic models for data validation
-- Automatic schema enforcement
-- Error handling and logging
-
-### ✅ Configuration Management
-- Environment-based configuration
-- Secure credential handling
-- Project settings centralized
-
-## Project Structure
+## Architecture & Design Decisions
 
 ```
-├── ingestion/
-│   ├── batch/          # Batch processing
-│   │   └── batch_ingest.py
-│   ├── streaming/      # Streaming (planned)
-│   └── common/         # Shared utilities
-│       ├── api_client.py
-│       ├── config.py
-│       └── models.py
-├── dbt/                # Data transformation
-├── .env.example        # Configuration template
-└── README.md
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌─────────────┐
+│ FakeStore   │    │ Ingestion    │    │ Raw Data    │    │ Analytics   │
+│ API         │────│ Pipelines    │────│ (BigQuery)  │────│ Star Schema │
+└─────────────┘    └──────────────┘    └─────────────┘    └─────────────┘
+                            │
+                   ┌────────┼────────┐
+                   │                 │
+            ┌──────▼──────┐  ┌───────▼───────┐
+            │ Batch       │  │ Streaming     │
+            │ Products    │  │ Carts         │
+            │ Users       │  │ (Pub/Sub)     │
+            └─────────────┘  └───────────────┘
 ```
 
-## Quick Start
+### Key Design Decisions
+- **Cloud-first**: GCP services for scalability and reliability
+- **JSONL format**: Efficient BigQuery loading and storage
+- **Pub/Sub messaging**: Reliable real-time data streaming  
+- **dbt transformations**: Maintainable SQL-based transforms
+- **Pydantic validation**: Strong data typing and validation
 
-1. **Setup Environment**
-   ```bash
-   cp .env.example .env
-   # Update .env with your GCP credentials
-   ```
+## Project Status
 
-2. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt  # From pyproject.toml
-   ```
+### ✅ Completed Components
+- **Batch Pipeline**: Products & Users ingestion (GCS → BigQuery) with idempotent daily processing
+- **Streaming Pipeline**: Carts API polling → Pub/Sub → BigQuery with event metadata and deduplication
+- **Raw Data Storage**: Immutable JSONL files in GCS with date-based partitioning
+- **BigQuery Infrastructure**: Raw datasets with proper partitioning and clustering
+- **Event Architecture**: UUID-based event IDs, extraction/publish timestamps, and cart analytics focus
 
-3. **Run Batch Ingestion**
-   ```bash
-   python test_batch_ingest.py
-   ```
+### 🎯 Next Steps
+- **dbt Transformations**: Create star schema from raw data
+- **Analytics Models**: Transform raw cart events, products, and users into dimensional model
+- **Documentation**: Complete architecture diagram and deployment guide
 
-4. **Verify Data**
-   ```bash
-   python test_bigquery.py
-   ```
+## Quick Verification
 
-## Current Data Flow
+The pipeline is working end-to-end. To verify:
 
-1. **Extract**: Fetch data from FakeStore API
-2. **Transform**: Validate with Pydantic models
-3. **Load**: Save to GCS as JSONL files
-4. **Warehouse**: Load to BigQuery tables
+```bash
+# Check raw data in BigQuery
+bq query "SELECT COUNT(*) as products FROM ey-data-platform.bq_raw.Products"
+bq query "SELECT COUNT(*) as users FROM ey-data-platform.bq_raw.Users" 
+bq query "SELECT COUNT(*) as cart_events FROM ey-data-platform.bq_raw.carts_events"
+```
 
-## BigQuery Tables Created
+### Prerequisites
+1. GCP Project with billing enabled
+2. Service Account with permissions:
+   - BigQuery Admin
+   - Storage Admin  
+   - Pub/Sub Admin
+3. Environment configuration (`.env` file)
 
-- `bq_raw.Products` (20 products)
-- `bq_raw.Users` (10 users)
+### GCP Resources Required
+```bash
+# BigQuery datasets
+bq_raw              # Raw ingested data
+bq_analytics        # Transformed analytics tables
 
-## Next Steps
+# Cloud Storage  
+{project}-raw-data  # JSONL files storage
 
-- [ ] Streaming ingestion (carts, orders)
-- [ ] Pub/Sub integration
-- [ ] Data transformation with dbt
-- [ ] Monitoring and alerting
+# Pub/Sub
+carts-events        # Topic for cart events
+carts-events-sub    # Subscription for processing
+```
 
-## Tech Stack
+## How to Run Batch Ingestion
 
-- **Language**: Python 3.13
-- **Cloud**: Google Cloud Platform
-- **Storage**: Google Cloud Storage
-- **Warehouse**: BigQuery
-- **Validation**: Pydantic
-- **Environment**: Virtual environment (.venv)
+```bash
+# Run batch pipeline for products and users
+python -m ingestion.batch.batch_ingest
+
+# Verify data loaded to BigQuery
+python test_bigquery.py
+```
+
+**Output**: 
+- Products: 20 records in `bq_raw.Products`
+- Users: 10 records in `bq_raw.Users`
+
+## How Near Real-Time Ingestion Works
+
+### Architecture
+```
+FakeStore Carts API → API Poller → Pub/Sub → Consumer → GCS → BigQuery
+                     (60s poll)            (buffered)
+```
+
+### Running the Pipeline
+
+1. **Start API Poller** (polls carts API every 60 seconds)
+```bash
+python -m ingestion.streaming.carts_poller
+```
+
+2. **Start Consumer** (processes Pub/Sub messages)
+```bash  
+python -m ingestion.streaming.carts_consumer
+```
+
+3. **Test End-to-End**
+```bash
+python test_end_to_end.py
+```
+
+**Data Flow**:
+- Polls 7 carts from API every 60 seconds
+- Publishes cart events to Pub/Sub topic
+- Consumer saves events to GCS in JSONL format
+- Ready for BigQuery loading
+
+## How to Run dbt
+
+*Coming Soon - dbt transformations for star schema*
+
+```bash
+cd dbt/
+dbt run    # Transform raw data to analytics tables  
+dbt test   # Run data quality tests
+```
+
+## Assumptions & Limitations
+
+### Assumptions
+- FakeStore API availability and rate limits
+- GCP resources provisioned and accessible
+- Static API data (same 20 products, 10 users, 7 carts)
+- JSONL format acceptable for all data loads
+
+### Current Limitations  
+- **No incremental processing**: Full reload on each batch run
+- **dbt transformations**: Not yet implemented
+- **Streaming BigQuery load**: Currently saves to GCS only
+- **Error handling**: Basic error logging, no dead letter queues
+- **Monitoring**: No alerting or dashboards configured
+- **Authentication**: Service account key file (not recommended for production)
+
+### Production Readiness TODOs
+- [ ] Implement dbt star schema transformations
+- [ ] Add streaming BigQuery loading 
+- [ ] Implement proper secret management
+- [ ] Add monitoring and alerting
+- [ ] Set up CI/CD pipeline
+- [ ] Add data quality tests and validation

@@ -23,12 +23,12 @@ class User(BaseModel):
 
 class CartItem(BaseModel):
     """Item in a cart."""
-    product_id: int
+    productId: int
     quantity: int
 
 class Cart(BaseModel):
     """Cart data (streaming)."""
     id: int
-    user_id: int
+    userId: int
     date: datetime
     products: List[CartItem]
