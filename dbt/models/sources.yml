@@ -1,0 +1,41 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data from ingestion pipelines"
+    database: ey-data-platform
+    schema: bq_raw
+    tables:
+      - name: Products
+        description: "E-commerce product catalog from FakeStore API"
+        columns:
+          - name: id
+            description: "Product unique identifier"
+          - name: title
+            description: "Product name"
+          - name: price
+            description: "Product price in USD"
+          - name: category
+            description: "Product category"
+            
+      - name: Users
+        description: "Customer data from FakeStore API"
+        columns:
+          - name: id
+            description: "User unique identifier"
+          - name: username
+            description: "User login name"
+          - name: email
+            description: "User email address"
+            
+      - name: carts_events
+        description: "Real-time cart events from streaming pipeline"
+        columns:
+          - name: event_id
+            description: "Unique event identifier"
+          - name: cart_id
+            description: "Cart identifier"
+          - name: user_id
+            description: "User identifier"
+          - name: total_items
+            description: "Total number of items in cart"
