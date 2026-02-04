@@ -29,7 +29,7 @@ class CartsPoller:
         )
         self.poll_interval = settings.CARTS_POLL_INTERVAL_SECONDS
         
-        # Track processed cart IDs to avoid duplicates
+        # Track processed cart IDs
         self.processed_cart_ids: Set[int] = set()
         
         logger.info(f"CartsPoller initialized")
@@ -65,7 +65,7 @@ class CartsPoller:
         
         for cart in carts:
             try:
-                # Create simple cart event for analytics - focus on key metrics
+                # Create cart event with key metrics
                 event = {
                     "event_id": str(uuid.uuid4()),
                     "event_type": "cart_created", 

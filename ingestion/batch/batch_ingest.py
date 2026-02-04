@@ -2,6 +2,7 @@
 import json
 import logging
 from datetime import datetime
+from typing import List, Any, Callable
 from google.cloud import storage
 from ..common.api_client import FakeStoreClient
 from ..common.config import settings
@@ -18,46 +19,36 @@ class BatchIngestion:
         self.bucket = self.gcs_client.bucket(settings.GCS_RAW_BUCKET)
         self.run_date = datetime.now().strftime("%Y-%m-%d")
         
-    def ingest_products(self):
-        """Fetch and store products data (idempotent by date)."""
-        logger.info("Starting products ingestion...")
+    def _ingest_data(self, data_type: str, fetch_method: Callable) -> None:
+        """Fetch data and save to Cloud Storage."""
+        logger.info(f"Starting {data_type} ingestion...")
         
-        products = self.client.get_products()
-        logger.info(f"Fetched {len(products)} products")
+        # Fetch data
+        data = fetch_method()
+        logger.info(f"Fetched {len(data)} {data_type}")
         
-        # Idempotent filename - same file for same date
-        blob_name = f"products/products_{self.run_date}.jsonl"
+        # Generate filename with date
+        blob_name = f"{data_type}/{data_type}_{self.run_date}.jsonl"
         
-        # Convert to JSONL
-        products_jsonl = "\n".join([json.dumps(product.model_dump()) for product in products])
+        # Convert to JSONL format
+        data_jsonl = "\n".join([json.dumps(item.model_dump()) for item in data])
         
-        # Upload (overwrites if exists)
+        # Upload to Cloud Storage
         blob = self.bucket.blob(blob_name)
-        blob.upload_from_string(products_jsonl)
+        blob.upload_from_string(data_jsonl)
         
-        logger.info(f"✅ Products saved to gs://{settings.GCS_RAW_BUCKET}/{blob_name}")
+        logger.info(f"✅ {data_type.title()} saved to gs://{settings.GCS_RAW_BUCKET}/{blob_name}")
+        
+    def ingest_products(self):
+        """Fetch and store products data."""
+        self._ingest_data("products", self.client.get_products)
         
     def ingest_users(self):
-        """Fetch and store users data (idempotent by date)."""
-        logger.info("Starting users ingestion...")
-        
-        users = self.client.get_users()
-        logger.info(f"Fetched {len(users)} users")
-        
-        # Idempotent filename - same file for same date
-        blob_name = f"users/users_{self.run_date}.jsonl"
-        
-        # Convert to JSONL
-        users_jsonl = "\n".join([json.dumps(user.model_dump()) for user in users])
-        
-        # Upload (overwrites if exists)
-        blob = self.bucket.blob(blob_name)
-        blob.upload_from_string(users_jsonl)
-        
-        logger.info(f"✅ Users saved to gs://{settings.GCS_RAW_BUCKET}/{blob_name}")
+        """Fetch and store users data."""
+        self._ingest_data("users", self.client.get_users)
         
     def run(self):
-        """Run full batch ingestion (idempotent)."""
+        """Run complete batch ingestion process."""
         logger.info(f"Starting batch ingestion for {self.run_date}...")
         
         try:

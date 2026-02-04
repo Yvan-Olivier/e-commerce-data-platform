@@ -4,42 +4,45 @@ title: EY Data Platform Architecture
 
 graph TD
     %% Data Sources
-    subgraph "External APIs"
-        A1[📦 Products API<br/>fakestoreapi.com/products]
-        A2[👥 Users API<br/>fakestoreapi.com/users]
-        A3[🛒 Carts API<br/>fakestoreapi.com/carts]
+    subgraph APIS["External APIs"]
+        direction LR
+        A1[Products API<br/>fakestoreapi.com/products]
+        A2[Users API<br/>fakestoreapi.com/users]
+        A3[Carts API<br/>fakestoreapi.com/carts]
     end
 
     %% Ingestion Layer
-    subgraph "Ingestion Pipelines"
-        direction TB
-        B1[🔄 Batch Ingester<br/>Daily Schedule<br/>batch_ingest.py]
-        B2[⚡ Cart Poller<br/>60s intervals<br/>carts_poller.py]
-        B3[📡 Stream Consumer<br/>Real-time<br/>carts_consumer.py]
+    subgraph INGESTION["Ingestion Pipelines"]
+        direction LR
+        B1[Batch Ingester<br/>Daily Schedule<br/>batch_ingest.py]
+        B2[Cart Poller<br/>60s intervals<br/>carts_poller.py]
+        B3[Stream Consumer<br/>Real-time<br/>carts_consumer.py]
     end
 
     %% Message Broker
-    subgraph "Event Streaming"
-        C1[☁️ Pub/Sub Topic<br/>carts-events]
-        C2[📬 Subscription<br/>carts-events-sub]
-    end
+    C1[Pub/Sub Topic<br/>carts-events]
+    C2[Subscription<br/>carts-events-sub]
 
     %% Raw Storage
-    subgraph "Raw Data Layer"
-        D1[🗄️ Cloud Storage<br/>JSONL Files<br/>Date Partitioned]
-        D2[📊 BigQuery Raw<br/>bq_raw dataset]
+    subgraph STORAGE["Raw Data Layer"]
+        D1[Cloud Storage<br/>JSONL Files<br/>Date Partitioned]
+        D2[BigQuery Raw<br/>bq_raw dataset]
     end
 
     %% Transformation Layer
-    subgraph "dbt Transformations"
-        direction TB
-        E1[🧹 Staging Layer<br/>stg_products<br/>stg_users<br/>stg_cart_events]
-        E2[⭐ Marts Layer<br/>dim_products<br/>dim_users<br/>fact_orders]
+    subgraph TRANSFORM["dbt Transformations"]
+        E1[Staging Layer<br/>stg_products<br/>stg_users<br/>stg_cart_events]
+        E2[Marts Layer<br/>dim_products<br/>dim_users<br/>fact_orders]
     end
 
     %% Analytics Layer
-    subgraph "Analytics Ready"
-        F1[📈 Star Schema<br/>bq_analytics dataset<br/>BI Ready]
+    F1[Star Schema<br/>bq_analytics dataset<br/>BI Ready]
+
+    %% Infrastructure
+    subgraph INFRA["Infrastructure"]
+        G1[Service Account<br/>BigQuery + GCS + Pub/Sub]
+        G2[Python Environment<br/>dbt + GCP SDKs]
+        G3[Configuration<br/>.env + profiles.yml]
     end
 
     %% Data Flow - Batch
@@ -58,30 +61,30 @@ graph TD
 
     %% Data Flow - Transformations
     D2 -->|Source| E1
-    E1 -->|{{ ref() }}| E2
+    E1 -->|dbt ref| E2
     E2 -->|Analytics| F1
 
     %% Styling
-    classDef apiStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef ingestStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef streamStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef storageStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef transformStyle fill:#fff8e1,stroke:#f57f17,stroke-width:2px
-    classDef analyticsStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef apiStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000
+    classDef ingestStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#000
+    classDef streamStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef storageStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#000
+    classDef transformStyle fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#000
+    classDef analyticsStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    classDef infraStyle fill:#f1f8e9,stroke:#558b2f,stroke-width:3px,color:#000
 
-    class A1,A2,A3 apiStyle
-    class B1,B2,B3 ingestStyle
+    classDef componentStyle fill:#ffffff,stroke:#666666,stroke-width:2px,color:#000
+
+    class APIS apiStyle
+    class INGESTION ingestStyle
     class C1,C2 streamStyle
-    class D1,D2 storageStyle
-    class E1,E2 transformStyle
+    class STORAGE storageStyle
+    class TRANSFORM transformStyle
     class F1 analyticsStyle
+    class INFRA infraStyle
 
-    %% Metadata
-    subgraph "🔧 Infrastructure"
-        direction LR
-        G1[🔑 Service Account<br/>BigQuery + GCS + Pub/Sub]
-        G2[⚙️ Python Environment<br/>dbt + GCP SDKs]
-        G3[📝 Configuration<br/>.env + profiles.yml]
-    end
-
-    class G1,G2,G3 storageStyle
+    class A1,A2,A3 componentStyle
+    class B1,B2,B3 componentStyle
+    class D1,D2 componentStyle
+    class E1,E2 componentStyle
+    class G1,G2,G3 componentStyle

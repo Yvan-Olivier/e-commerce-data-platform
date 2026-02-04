@@ -1,8 +1,8 @@
-"""Configuration for env vars, settings (single source of truth)."""
+"""Application configuration settings."""
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Loads .env file
+load_dotenv()
 
 class Settings:
     # GCP
@@ -25,7 +25,6 @@ class Settings:
     PUBSUB_SUBSCRIPTION_CARTS = os.environ["PUBSUB_SUBSCRIPTION_CARTS"]
     # Ingestion
     CARTS_POLL_INTERVAL_SECONDS = int(os.environ.get("CARTS_POLL_INTERVAL_SECONDS", "60"))
-    BATCH_SCHEDULE_HOUR = int(os.environ.get("BATCH_SCHEDULE_HOUR", "2"))
     
     # Runtime
     ENV = os.environ.get("ENV", "local")

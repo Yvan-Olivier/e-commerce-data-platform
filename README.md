@@ -60,11 +60,6 @@ bq query "SELECT COUNT(*) FROM ey-data-platform.bq_analytics.dim_users"         
 bq query "SELECT COUNT(*) FROM ey-data-platform.bq_analytics.fact_orders"        # Expected: 1+
 ```
 
-### End-to-End Test
-```bash
-python test_end_to_end.py  # Validates complete data flow API → Analytics
-```
-
 ### Prerequisites
 1. GCP Project with billing enabled
 2. Service Account with permissions:
@@ -92,9 +87,6 @@ carts-events-sub    # Subscription for processing
 ```bash
 # Run batch pipeline for products and users
 python -m ingestion.batch.batch_ingest
-
-# Verify data loaded to BigQuery
-python test_bigquery.py
 ```
 
 **Output**: 
@@ -119,11 +111,6 @@ python -m ingestion.streaming.carts_poller
 2. **Start Consumer** (processes Pub/Sub messages)
 ```bash  
 python -m ingestion.streaming.carts_consumer
-```
-
-3. **Test End-to-End**
-```bash
-python test_end_to_end.py
 ```
 
 **Data Flow**:
