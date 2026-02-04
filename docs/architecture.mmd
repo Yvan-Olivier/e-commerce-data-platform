@@ -1,0 +1,87 @@
+---
+title: EY Data Platform Architecture
+---
+
+graph TD
+    %% Data Sources
+    subgraph "External APIs"
+        A1[📦 Products API<br/>fakestoreapi.com/products]
+        A2[👥 Users API<br/>fakestoreapi.com/users]
+        A3[🛒 Carts API<br/>fakestoreapi.com/carts]
+    end
+
+    %% Ingestion Layer
+    subgraph "Ingestion Pipelines"
+        direction TB
+        B1[🔄 Batch Ingester<br/>Daily Schedule<br/>batch_ingest.py]
+        B2[⚡ Cart Poller<br/>60s intervals<br/>carts_poller.py]
+        B3[📡 Stream Consumer<br/>Real-time<br/>carts_consumer.py]
+    end
+
+    %% Message Broker
+    subgraph "Event Streaming"
+        C1[☁️ Pub/Sub Topic<br/>carts-events]
+        C2[📬 Subscription<br/>carts-events-sub]
+    end
+
+    %% Raw Storage
+    subgraph "Raw Data Layer"
+        D1[🗄️ Cloud Storage<br/>JSONL Files<br/>Date Partitioned]
+        D2[📊 BigQuery Raw<br/>bq_raw dataset]
+    end
+
+    %% Transformation Layer
+    subgraph "dbt Transformations"
+        direction TB
+        E1[🧹 Staging Layer<br/>stg_products<br/>stg_users<br/>stg_cart_events]
+        E2[⭐ Marts Layer<br/>dim_products<br/>dim_users<br/>fact_orders]
+    end
+
+    %% Analytics Layer
+    subgraph "Analytics Ready"
+        F1[📈 Star Schema<br/>bq_analytics dataset<br/>BI Ready]
+    end
+
+    %% Data Flow - Batch
+    A1 -->|HTTP GET| B1
+    A2 -->|HTTP GET| B1
+    B1 -->|JSONL| D1
+    D1 -->|Load Job| D2
+
+    %% Data Flow - Streaming
+    A3 -->|HTTP Poll| B2
+    B2 -->|Publish| C1
+    C1 --> C2
+    C2 -->|Subscribe| B3
+    B3 -->|JSONL| D1
+    B3 -->|Stream Insert| D2
+
+    %% Data Flow - Transformations
+    D2 -->|Source| E1
+    E1 -->|{{ ref() }}| E2
+    E2 -->|Analytics| F1
+
+    %% Styling
+    classDef apiStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef ingestStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef streamStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef storageStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef transformStyle fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    classDef analyticsStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class A1,A2,A3 apiStyle
+    class B1,B2,B3 ingestStyle
+    class C1,C2 streamStyle
+    class D1,D2 storageStyle
+    class E1,E2 transformStyle
+    class F1 analyticsStyle
+
+    %% Metadata
+    subgraph "🔧 Infrastructure"
+        direction LR
+        G1[🔑 Service Account<br/>BigQuery + GCS + Pub/Sub]
+        G2[⚙️ Python Environment<br/>dbt + GCP SDKs]
+        G3[📝 Configuration<br/>.env + profiles.yml]
+    end
+
+    class G1,G2,G3 storageStyle
