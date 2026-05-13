@@ -1,8 +1,8 @@
-name: 'ey_data_platform'
+name: 'ecommerce_data_platform'
 version: '1.0.0'
 config-version: 2
 
-profile: 'ey_data_platform'
+profile: 'ecommerce_data_platform'
 
 model-paths: ["models"]
 target-path: "target"
@@ -11,5 +11,5 @@ clean-targets:
   - "dbt_packages"
 
 models:
-  ey_data_platform:
+  ecommerce_data_platform:
     +materialized: table

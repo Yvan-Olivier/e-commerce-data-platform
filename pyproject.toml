@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ey-data-platform"
+name = "ecommerce-data-platform"
 version = "0.1.0"
-description = "Production data platform for EY technical test"
+description = "Production data platform for e-commerce analytics"
 requires-python = ">=3.9"
 dependencies = [
     "pydantic>=2.0.0",

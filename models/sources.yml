@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: raw
     description: "Raw data from ingestion pipelines"
-    database: ey-data-platform
+    database: ecommerce-data-platform
     schema: bq_raw
     tables:
       - name: Products

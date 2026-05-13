@@ -1,4 +1,4 @@
-# EY Data Platform
+# E-Commerce Data Platform
 
 Production-ready data pipeline on GCP for e-commerce analytics with batch and near real-time ingestion.
 
